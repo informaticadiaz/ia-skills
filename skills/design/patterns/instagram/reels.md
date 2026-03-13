@@ -77,6 +77,19 @@ interface ReelsFeedProps {
 export function ReelsFeed({ reels, hasBottomNav = false, className }: ReelsFeedProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  // liked indexado por id — persiste si el usuario vuelve al mismo item
+  // ⚠️ NO poner liked dentro de ReelFeedItem: con loop infinito (append)
+  // cada ciclo crea instancias nuevas con liked=false aunque el usuario ya likeó
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+
+  const toggleLike = (id: string) => {
+    setLikedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     const container = containerRef.current
@@ -114,6 +127,8 @@ export function ReelsFeed({ reels, hasBottomNav = false, className }: ReelsFeedP
             reel={reel}
             isActive={index === currentIndex}
             hasBottomNav={hasBottomNav}
+            liked={likedIds.has(reel.id)}
+            onLike={() => toggleLike(reel.id)}
           />
         ))}
       </div>
@@ -158,17 +173,11 @@ interface ReelFeedItemProps {
   reel: ReelItem
   isActive: boolean
   hasBottomNav: boolean
+  liked: boolean
+  onLike: () => void
 }
 
-function ReelFeedItem({ reel, isActive, hasBottomNav }: ReelFeedItemProps) {
-  const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(reel.likes)
-
-  const handleLike = () => {
-    setLiked(!liked)
-    setLikeCount(prev => liked ? prev - 1 : prev + 1)
-  }
-
+function ReelFeedItem({ reel, isActive, hasBottomNav, liked, onLike }: ReelFeedItemProps) {
   return (
     <article className="relative h-[100dvh] w-full snap-start snap-always">
       {/* Fondo */}
@@ -206,12 +215,12 @@ function ReelFeedItem({ reel, isActive, hasBottomNav }: ReelFeedItemProps) {
 
         {/* Like */}
         <button
-          onClick={handleLike}
+          onClick={onLike}
           className="flex flex-col items-center gap-1"
           aria-label={liked ? 'Quitar like' : 'Dar like'}
         >
           <Heart className={cn('w-8 h-8', liked ? 'text-red-500 fill-red-500' : 'text-white')} />
-          <span className="text-white text-xs">{formatCount(likeCount)}</span>
+          <span className="text-white text-xs">{formatCount(reel.likes)}</span>
         </button>
 
         {/* Comentarios */}
@@ -487,6 +496,18 @@ export function ReelsFeed({ reels, hasBottomNav = false, initialIndex = 0, class
   const [items, setItems] = useState(reels)
   const containerRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  // ⚠️ liked DEBE vivir acá, indexado por id
+  // Si estuviera en ReelFeedItem, cada append crea instancias nuevas con liked=false
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+
+  const toggleLike = (id: string) => {
+    setLikedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   // Scroll al índice inicial
   useEffect(() => {
@@ -530,8 +551,9 @@ export function ReelsFeed({ reels, hasBottomNav = false, initialIndex = 0, class
   // Indicadores: posición dentro del ciclo actual
   const cyclePosition = currentIndex % reels.length
 
-  // ... render usando `items` en el map, `reels` para los indicadores
+  // render usando `items` en el map, `reels` para los indicadores
   // key={index} — NO key={item.id}, los ids se duplican al hacer append
+  // liked y onLike se pasan como props — nunca van adentro del item
 }
 ```
 
