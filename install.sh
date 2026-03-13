@@ -34,10 +34,18 @@ fi
 ln -s "$INSTALL_DIR/skills/design/design.md" "$COMMANDS_DIR/design.md"
 echo "   ✓ /design"
 
+# Skill: ia-skills-manager
+if [ -L "$COMMANDS_DIR/ia-skills-manager.md" ]; then
+    rm "$COMMANDS_DIR/ia-skills-manager.md"
+fi
+ln -s "$INSTALL_DIR/skills/ia-skills-manager/ia-skills-manager.md" "$COMMANDS_DIR/ia-skills-manager.md"
+echo "   ✓ /ia-skills-manager"
+
 echo ""
 echo "✅ Instalación completada!"
 echo ""
 echo "Skills disponibles:"
-echo "   /design - Patrones UI de apps populares"
+echo "   /design           - Patrones UI de apps populares"
+echo "   /ia-skills-manager - Gestión del repositorio ia-skills"
 echo ""
-echo "Uso: escribe /design en Claude Code"
+echo "Uso: escribe /design o /ia-skills-manager en Claude Code"
