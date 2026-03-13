@@ -305,3 +305,135 @@ const reels = [
 - **Scroll sin nav visible**: combinar con `ContentViewer` del patrón `common/content-viewer` para abrir en overlay fullscreen
 - **Con video real**: reemplazar `<Image>` por `<video autoPlay muted loop playsInline>` cuando `isActive`
 - **Colores de acción**: cambiar `text-red-500` del like por tu color de acento
+
+---
+
+## Composición con ContentViewer
+
+El patrón completo de Instagram/TikTok no es solo el feed — es **grid de thumbnails → tap → feed fullscreen**. El `ContentViewer` tapa nav, header y todo el layout.
+
+### Anatomía de la composición
+
+```
+GridViewer
+├── Grid de thumbnails (aspect-[9/16], 2-4 columnas)
+│   └── ContentTrigger (cada thumbnail es clickeable)
+│       └── <Image> + gradient + info inferior
+└── ContentViewer (fixed inset-0 z-[9999], portal)
+    └── ReelsFeed (con initialIndex para abrir en el item correcto)
+```
+
+### Código
+
+```tsx
+'use client'
+
+import { useState } from 'react'
+import Image from 'next/image'
+import { Play } from 'lucide-react'
+import { ContentViewer, ContentTrigger } from '@/components/ui/content-viewer'
+import { ReelsFeed } from './ReelsFeed'
+import type { ReelItem } from './types'
+
+interface ReelsGridViewerProps {
+  reels: ReelItem[]
+  /** true para abrir el viewer inmediatamente al montar */
+  autoOpen?: boolean
+}
+
+export function ReelsGridViewer({ reels, autoOpen = false }: ReelsGridViewerProps) {
+  const [open, setOpen] = useState(autoOpen)
+  const [startIndex, setStartIndex] = useState(0)
+
+  const openAt = (index: number) => {
+    setStartIndex(index)
+    setOpen(true)
+  }
+
+  return (
+    <>
+      {/* Grid de thumbnails — aspect-[9/16] para formato vertical */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 p-1">
+        {reels.map((reel, index) => (
+          <ContentTrigger
+            key={reel.id}
+            onTrigger={() => openAt(index)}
+            className="relative aspect-[9/16] overflow-hidden bg-black group w-full"
+          >
+            <Image
+              src={reel.coverImage}
+              alt={reel.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            />
+
+            {/* Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+
+            {/* Play icon on hover */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="p-3 rounded-full bg-white/20 backdrop-blur-sm">
+                <Play className="w-6 h-6 text-white fill-white" />
+              </div>
+            </div>
+
+            {/* Info inferior */}
+            <div className="absolute bottom-0 inset-x-0 p-2">
+              <p className="text-white text-xs font-semibold leading-tight line-clamp-2">
+                {reel.title}
+              </p>
+            </div>
+          </ContentTrigger>
+        ))}
+      </div>
+
+      {/* Viewer fullscreen — tapa nav, header, todo */}
+      <ContentViewer open={open} onClose={() => setOpen(false)}>
+        <ReelsFeed reels={reels} initialIndex={startIndex} />
+      </ContentViewer>
+    </>
+  )
+}
+```
+
+### Props del ReelsFeed extendido
+
+Para que funcione con `initialIndex`, el `ReelsFeed` necesita la prop y hacer scroll al montar:
+
+```tsx
+interface ReelsFeedProps {
+  reels: ReelItem[]
+  hasBottomNav?: boolean
+  /** Índice inicial al abrir. Default: 0 */
+  initialIndex?: number
+  className?: string
+}
+
+// Dentro del componente, agregar este effect:
+useEffect(() => {
+  const container = containerRef.current
+  if (!container || initialIndex === 0) return
+  container.scrollTop = initialIndex * container.clientHeight
+}, [initialIndex])
+```
+
+### Uso
+
+```tsx
+// Página — server component fetcha, client component renderiza
+const reels = await getReels()
+
+// Con autoOpen: abre el viewer directamente (sin mostrar el grid)
+<ReelsGridViewer reels={reels} autoOpen />
+
+// Sin autoOpen: muestra el grid primero
+<ReelsGridViewer reels={reels} />
+```
+
+### Cuándo usar `autoOpen`
+
+- La ruta `/reels` debe abrir el feed directamente → `autoOpen={true}`
+- Un componente embebido en un perfil o home → `autoOpen={false}` (muestra el grid)
+
+> Ver skill `common/content-viewer` para detalles del overlay y el hook `useContentViewer`.
