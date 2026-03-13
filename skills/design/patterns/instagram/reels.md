@@ -437,3 +437,146 @@ const reels = await getReels()
 - Un componente embebido en un perfil o home → `autoOpen={false}` (muestra el grid)
 
 > Ver skill `common/content-viewer` para detalles del overlay y el hook `useContentViewer`.
+
+---
+
+## Variantes: Orden Aleatorio + Loop Infinito
+
+Dos mejoras independientes que se pueden combinar. El shuffle se aplica **una sola vez al montar**. El loop ocurre **cuando el feed llega al último item**.
+
+### 1. Orden aleatorio al montar
+
+Shufflear el array en el `useState` lazy initializer — se ejecuta una sola vez, no en cada re-render.
+
+```tsx
+function shuffleArray<T>(arr: T[]): T[] {
+  const result = [...arr]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+```
+
+En el componente que recibe los items (grid viewer o feed directamente):
+
+```tsx
+export function ReelsGridViewer({ reels, autoOpen = false }: ReelsGridViewerProps) {
+  // Shuffle una sola vez al montar — lazy initializer
+  const [items] = useState(() => shuffleArray(reels))
+  const [open, setOpen] = useState(autoOpen)
+  const [startIndex, setStartIndex] = useState(0)
+
+  // El grid y el feed usan `items`, no `reels`
+  // ...
+}
+```
+
+### 2. Loop infinito al llegar al final
+
+Modificar `scrollTo` en `ReelsFeed` para que al llegar al último item, el siguiente scroll vuelva al primero con el mismo `behavior: 'smooth'` — igual que cualquier otra transición.
+
+```tsx
+const scrollTo = (direction: 'up' | 'down') => {
+  const container = containerRef.current
+  if (!container) return
+
+  let newIndex: number
+  if (direction === 'down' && currentIndex === items.length - 1) {
+    newIndex = 0  // loop al inicio
+  } else {
+    newIndex = direction === 'up'
+      ? Math.max(0, currentIndex - 1)
+      : Math.min(items.length - 1, currentIndex + 1)
+  }
+
+  container.scrollTo({ top: newIndex * container.clientHeight, behavior: 'smooth' })
+}
+```
+
+Para que el loop también funcione con **swipe táctil** (no solo con los botones), detectar cuando el usuario intenta scrollear más allá del último item:
+
+```tsx
+useEffect(() => {
+  const container = containerRef.current
+  if (!container) return
+
+  const handleScroll = () => {
+    const index = Math.round(container.scrollTop / container.clientHeight)
+    setCurrentIndex(index)
+
+    // Cuando llega al último, volver al primero en el siguiente frame
+    if (index === items.length - 1) {
+      const onNextScroll = () => {
+        container.scrollTo({ top: 0, behavior: 'smooth' })
+        container.removeEventListener('scroll', onNextScroll)
+      }
+      container.addEventListener('scroll', onNextScroll, { once: true, passive: true })
+    }
+  }
+
+  container.addEventListener('scroll', handleScroll, { passive: true })
+  return () => container.removeEventListener('scroll', handleScroll)
+}, [items.length])
+```
+
+### Combinados en ReelsFeed
+
+```tsx
+export function ReelsFeed({ reels, hasBottomNav = false, initialIndex = 0, className }: ReelsFeedProps) {
+  // Shuffle una sola vez
+  const [items] = useState(() => shuffleArray(reels))
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+
+  // Scroll al índice inicial
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || initialIndex === 0) return
+    container.scrollTop = initialIndex * container.clientHeight
+  }, [initialIndex])
+
+  // Tracking de posición + loop táctil
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const index = Math.round(container.scrollTop / container.clientHeight)
+      setCurrentIndex(index)
+
+      if (index === items.length - 1) {
+        const onNextScroll = () => {
+          container.scrollTo({ top: 0, behavior: 'smooth' })
+          container.removeEventListener('scroll', onNextScroll)
+        }
+        container.addEventListener('scroll', onNextScroll, { once: true, passive: true })
+      }
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [items.length])
+
+  // Loop en botones de navegación
+  const scrollTo = (direction: 'up' | 'down') => {
+    const container = containerRef.current
+    if (!container) return
+
+    let newIndex: number
+    if (direction === 'down' && currentIndex === items.length - 1) {
+      newIndex = 0
+    } else {
+      newIndex = direction === 'up'
+        ? Math.max(0, currentIndex - 1)
+        : Math.min(items.length - 1, currentIndex + 1)
+    }
+
+    container.scrollTo({ top: newIndex * container.clientHeight, behavior: 'smooth' })
+  }
+
+  // ... resto del render usando `items` en lugar de `reels`
+}
+```
