@@ -65,6 +65,8 @@ interface ReelItem {
   likes: number
   comments: number
   isFollowing?: boolean
+  /** URL a compartir. Si no se provee, usa `window.location.origin/reels/{id}` */
+  shareUrl?: string
 }
 
 interface ReelsFeedProps {
@@ -178,6 +180,30 @@ interface ReelFeedItemProps {
 }
 
 function ReelFeedItem({ reel, isActive, hasBottomNav, liked, onLike }: ReelFeedItemProps) {
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = async () => {
+    const url = reel.shareUrl ?? `${window.location.origin}/reels/${reel.id}`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: reel.title,
+          text: `@${reel.username}: ${reel.title}`,
+          url,
+        })
+      } catch (err) {
+        // AbortError = usuario canceló — no es un error real
+        if ((err as Error).name !== 'AbortError') console.error(err)
+      }
+    } else {
+      // Fallback desktop: copiar al portapapeles
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
   return (
     <article className="relative h-[100dvh] w-full snap-start snap-always">
       {/* Fondo */}
@@ -229,10 +255,16 @@ function ReelFeedItem({ reel, isActive, hasBottomNav, liked, onLike }: ReelFeedI
           <span className="text-white text-xs">{formatCount(reel.comments)}</span>
         </button>
 
-        {/* Compartir */}
-        <button className="flex flex-col items-center gap-1" aria-label="Compartir">
-          <Share2 className="w-8 h-8 text-white" />
-          <span className="text-white text-xs">Compartir</span>
+        {/* Compartir — Web Share API con fallback clipboard */}
+        <button
+          onClick={handleShare}
+          className="flex flex-col items-center gap-1"
+          aria-label="Compartir"
+        >
+          <Share2 className={cn('w-8 h-8', copied ? 'text-green-400' : 'text-white')} />
+          <span className={cn('text-xs', copied ? 'text-green-400' : 'text-white')}>
+            {copied ? 'Copiado' : 'Compartir'}
+          </span>
         </button>
 
         {/* Más opciones */}
