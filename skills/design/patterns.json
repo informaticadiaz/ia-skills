@@ -1,0 +1,206 @@
+{
+  "version": "1.0.0",
+  "description": "Catálogo de patrones UI de apps populares",
+  "apps": {
+    "instagram": {
+      "name": "Instagram",
+      "description": "Red social de fotos y videos",
+      "patterns": [
+        {
+          "id": "stories",
+          "name": "Stories",
+          "file": "patterns/instagram/stories.md",
+          "description": "Carrusel horizontal de avatares con gradiente",
+          "tags": ["social", "carousel", "avatar", "horizontal-scroll"],
+          "complexity": "medium"
+        },
+        {
+          "id": "feed-card",
+          "name": "Feed Card",
+          "file": "patterns/instagram/feed-card.md",
+          "description": "Post con imagen, acciones, likes y caption",
+          "tags": ["social", "card", "image", "interactions"],
+          "complexity": "medium"
+        },
+        {
+          "id": "profile-grid",
+          "name": "Profile Grid",
+          "file": "patterns/instagram/profile-grid.md",
+          "description": "Grid 3 columnas de fotos cuadradas",
+          "tags": ["grid", "gallery", "profile"],
+          "complexity": "easy"
+        },
+        {
+          "id": "reels",
+          "name": "Reels",
+          "file": "patterns/instagram/reels.md",
+          "description": "Card vertical fullscreen con overlay de info",
+          "tags": ["video", "fullscreen", "overlay", "social"],
+          "complexity": "hard"
+        },
+        {
+          "id": "story-viewer",
+          "name": "Story Viewer",
+          "file": "patterns/instagram/story-viewer.md",
+          "description": "Fullscreen con progress bars arriba",
+          "tags": ["fullscreen", "progress", "gallery", "touch"],
+          "complexity": "hard"
+        }
+      ]
+    },
+    "airbnb": {
+      "name": "Airbnb",
+      "description": "Plataforma de alojamientos",
+      "patterns": [
+        {
+          "id": "listing-card",
+          "name": "Listing Card",
+          "file": "patterns/airbnb/listing-card.md",
+          "description": "Card con carrusel, corazón, rating y precio",
+          "tags": ["card", "carousel", "favorite", "rating", "price"],
+          "complexity": "medium"
+        },
+        {
+          "id": "search-bar",
+          "name": "Search Bar",
+          "file": "patterns/airbnb/search-bar.md",
+          "description": "Barra expandible Donde · Cuando · Quiénes",
+          "tags": ["search", "expandable", "form", "filters"],
+          "complexity": "hard"
+        },
+        {
+          "id": "map-listings",
+          "name": "Map Listings",
+          "file": "patterns/airbnb/map-listings.md",
+          "description": "Split view mapa + lista de resultados",
+          "tags": ["map", "split-view", "list", "responsive"],
+          "complexity": "hard"
+        },
+        {
+          "id": "review-summary",
+          "name": "Review Summary",
+          "file": "patterns/airbnb/review-summary.md",
+          "description": "Rating grande + barras de categorías",
+          "tags": ["reviews", "rating", "bars", "summary"],
+          "complexity": "easy"
+        },
+        {
+          "id": "host-card",
+          "name": "Host Card",
+          "file": "patterns/airbnb/host-card.md",
+          "description": "Avatar, verificaciones y stats del host",
+          "tags": ["profile", "card", "verification", "stats"],
+          "complexity": "easy"
+        }
+      ]
+    },
+    "spotify": {
+      "name": "Spotify",
+      "description": "Streaming de música",
+      "patterns": [
+        {
+          "id": "playlist-card",
+          "name": "Playlist Card",
+          "file": "patterns/spotify/playlist-card.md",
+          "description": "Card cuadrada con gradiente y título",
+          "tags": ["card", "gradient", "music", "hover"],
+          "complexity": "easy"
+        },
+        {
+          "id": "track-row",
+          "name": "Track Row",
+          "file": "patterns/spotify/track-row.md",
+          "description": "Fila con cover, título, artista y duración",
+          "tags": ["list", "row", "music", "hover"],
+          "complexity": "easy"
+        },
+        {
+          "id": "now-playing",
+          "name": "Now Playing",
+          "file": "patterns/spotify/now-playing.md",
+          "description": "Barra inferior con controles de reproducción",
+          "tags": ["player", "controls", "sticky", "progress"],
+          "complexity": "medium"
+        },
+        {
+          "id": "horizontal-scroll",
+          "name": "Horizontal Scroll",
+          "file": "patterns/spotify/horizontal-scroll.md",
+          "description": "Sección con scroll horizontal de cards",
+          "tags": ["carousel", "scroll", "section", "responsive"],
+          "complexity": "easy"
+        },
+        {
+          "id": "artist-header",
+          "name": "Artist Header",
+          "file": "patterns/spotify/artist-header.md",
+          "description": "Header con imagen de fondo y gradiente",
+          "tags": ["header", "hero", "gradient", "image"],
+          "complexity": "medium"
+        }
+      ]
+    },
+    "common": {
+      "name": "Common",
+      "description": "Patrones comunes reutilizables",
+      "patterns": [
+        {
+          "id": "bottom-sheet",
+          "name": "Bottom Sheet",
+          "file": "patterns/common/bottom-sheet.md",
+          "description": "Modal que sube desde abajo con drag",
+          "tags": ["modal", "sheet", "drag", "mobile"],
+          "complexity": "medium"
+        },
+        {
+          "id": "command-palette",
+          "name": "Command Palette",
+          "file": "patterns/common/command-palette.md",
+          "description": "Buscador con atajos estilo VS Code/Linear",
+          "tags": ["search", "shortcuts", "modal", "keyboard"],
+          "complexity": "hard"
+        },
+        {
+          "id": "masonry-grid",
+          "name": "Masonry Grid",
+          "file": "patterns/common/masonry-grid.md",
+          "description": "Grid tipo Pinterest con alturas variables",
+          "tags": ["grid", "gallery", "responsive", "layout"],
+          "complexity": "medium"
+        }
+      ]
+    }
+  },
+  "frameworks": {
+    "react": {
+      "name": "React",
+      "detect": ["next", "react", "gatsby", "remix"],
+      "extension": ".tsx"
+    },
+    "vue": {
+      "name": "Vue",
+      "detect": ["vue", "nuxt"],
+      "extension": ".vue"
+    },
+    "svelte": {
+      "name": "Svelte",
+      "detect": ["svelte", "@sveltejs/kit"],
+      "extension": ".svelte"
+    },
+    "html": {
+      "name": "HTML/CSS",
+      "detect": [],
+      "extension": ".html"
+    }
+  },
+  "styles": {
+    "tailwind": {
+      "name": "Tailwind CSS",
+      "detect": ["tailwind.config.js", "tailwind.config.ts", "tailwind.config.mjs"]
+    },
+    "css": {
+      "name": "CSS puro",
+      "detect": []
+    }
+  }
+}
