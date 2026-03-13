@@ -17,8 +17,10 @@ Feed vertical con scroll snap que muestra un item por vez en pantalla completa. 
 - **Feed Item**: `h-[100dvh] snap-start snap-always` — un ítem por "pantalla"
   - **Background**: Imagen o video con `object-cover fill`
   - **Gradient Overlay**: `bg-gradient-to-t from-black/80 via-black/20 to-transparent`
-  - **Side Actions**: Columna derecha con like, comment, share, más
-  - **Bottom Info**: Usuario, descripción, audio track
+  - **Side Actions**: Columna derecha con like, comment, share, más → **`z-20`**
+  - **Bottom Info**: Usuario, descripción, audio track → **`z-10`**
+
+> ⚠️ **Regla de z-index:** Side Actions SIEMPRE `z-20`, Bottom Info SIEMPRE `z-10`. Mismo z-index en ambos hace que Bottom Info tape los botones (el último en el DOM gana). Los botones quedan no-cliqueables.
 - **Nav Buttons** (desktop): Flechas up/down en lateral derecho
 - **Progress Indicators**: Líneas verticales que indican posición actual
 
@@ -220,8 +222,9 @@ function ReelFeedItem({ reel, isActive, hasBottomNav, liked, onLike }: ReelFeedI
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
       {/* Acciones laterales */}
+      {/* z-20 — DEBE ser mayor que el info inferior (z-10) para no quedar bloqueado */}
       <div className={cn(
-        'absolute right-4 flex flex-col items-center gap-6 z-10',
+        'absolute right-4 flex flex-col items-center gap-6 z-20',
         hasBottomNav ? 'bottom-32' : 'bottom-20'
       )}>
         {/* Avatar con follow */}
