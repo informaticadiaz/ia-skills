@@ -473,61 +473,18 @@ export function ReelsGridViewer({ reels, autoOpen = false }: ReelsGridViewerProp
 }
 ```
 
-### 2. Loop infinito al llegar al final
+### 2. Loop infinito — append dinámico
 
-Modificar `scrollTo` en `ReelsFeed` para que al llegar al último item, el siguiente scroll vuelva al primero con el mismo `behavior: 'smooth'` — igual que cualquier otra transición.
+> ⚠️ **NO usar `scrollTo({ top: 0 })` desde el final.** Con `behavior: 'smooth'` scrollea hacia atrás pasando por todos los items — el efecto es el inverso al deseado.
 
-```tsx
-const scrollTo = (direction: 'up' | 'down') => {
-  const container = containerRef.current
-  if (!container) return
+El approach correcto es **append**: cuando el usuario está a 3 items del final, se agregan más items al array. El feed nunca termina, sin saltos, sin retroceso.
 
-  let newIndex: number
-  if (direction === 'down' && currentIndex === items.length - 1) {
-    newIndex = 0  // loop al inicio
-  } else {
-    newIndex = direction === 'up'
-      ? Math.max(0, currentIndex - 1)
-      : Math.min(items.length - 1, currentIndex + 1)
-  }
-
-  container.scrollTo({ top: newIndex * container.clientHeight, behavior: 'smooth' })
-}
-```
-
-Para que el loop también funcione con **swipe táctil** (no solo con los botones), detectar cuando el usuario intenta scrollear más allá del último item:
-
-```tsx
-useEffect(() => {
-  const container = containerRef.current
-  if (!container) return
-
-  const handleScroll = () => {
-    const index = Math.round(container.scrollTop / container.clientHeight)
-    setCurrentIndex(index)
-
-    // Cuando llega al último, volver al primero en el siguiente frame
-    if (index === items.length - 1) {
-      const onNextScroll = () => {
-        container.scrollTo({ top: 0, behavior: 'smooth' })
-        container.removeEventListener('scroll', onNextScroll)
-      }
-      container.addEventListener('scroll', onNextScroll, { once: true, passive: true })
-    }
-  }
-
-  container.addEventListener('scroll', handleScroll, { passive: true })
-  return () => container.removeEventListener('scroll', handleScroll)
-}, [items.length])
-```
-
-### Combinados en ReelsFeed
+El `ReelsFeed` maneja un estado `items` interno que crece. Recibe `reels` como base y hace append del mismo array cuando está cerca del final.
 
 ```tsx
 export function ReelsFeed({ reels, hasBottomNav = false, initialIndex = 0, className }: ReelsFeedProps) {
-  // Shuffle una sola vez
-  const [items] = useState(() => shuffleArray(reels))
-
+  // items crece a medida que el usuario scrollea — append infinito
+  const [items, setItems] = useState(reels)
   const containerRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
 
@@ -538,7 +495,13 @@ export function ReelsFeed({ reels, hasBottomNav = false, initialIndex = 0, class
     container.scrollTop = initialIndex * container.clientHeight
   }, [initialIndex])
 
-  // Tracking de posición + loop táctil
+  // Append cuando estamos a 3 items del final
+  useEffect(() => {
+    if (currentIndex >= items.length - 3) {
+      setItems(prev => [...prev, ...reels])
+    }
+  }, [currentIndex, items.length, reels])
+
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -546,37 +509,64 @@ export function ReelsFeed({ reels, hasBottomNav = false, initialIndex = 0, class
     const handleScroll = () => {
       const index = Math.round(container.scrollTop / container.clientHeight)
       setCurrentIndex(index)
-
-      if (index === items.length - 1) {
-        const onNextScroll = () => {
-          container.scrollTo({ top: 0, behavior: 'smooth' })
-          container.removeEventListener('scroll', onNextScroll)
-        }
-        container.addEventListener('scroll', onNextScroll, { once: true, passive: true })
-      }
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
     return () => container.removeEventListener('scroll', handleScroll)
-  }, [items.length])
+  }, [])
 
-  // Loop en botones de navegación
+  // scrollTo simple — sin lógica de loop
   const scrollTo = (direction: 'up' | 'down') => {
     const container = containerRef.current
     if (!container) return
 
-    let newIndex: number
-    if (direction === 'down' && currentIndex === items.length - 1) {
-      newIndex = 0
-    } else {
-      newIndex = direction === 'up'
-        ? Math.max(0, currentIndex - 1)
-        : Math.min(items.length - 1, currentIndex + 1)
-    }
+    const newIndex = direction === 'up'
+      ? Math.max(0, currentIndex - 1)
+      : currentIndex + 1
 
     container.scrollTo({ top: newIndex * container.clientHeight, behavior: 'smooth' })
   }
 
-  // ... resto del render usando `items` en lugar de `reels`
+  // Indicadores: posición dentro del ciclo actual
+  const cyclePosition = currentIndex % reels.length
+
+  // ... render usando `items` en el map, `reels` para los indicadores
+  // key={index} — NO key={item.id}, los ids se duplican al hacer append
+}
+```
+
+### Combinados en ReelsGridViewer
+
+El shuffle va en el **GridViewer**, no en el Feed — así grid y feed usan el mismo array y los índices corresponden.
+
+```tsx
+export function ReelsGridViewer({ reels, autoOpen = false }: ReelsGridViewerProps) {
+  // Shuffle una sola vez al montar
+  const [base] = useState(() => shuffleArray(reels))
+  const [open, setOpen] = useState(autoOpen)
+  const [startIndex, setStartIndex] = useState(0)
+
+  const openAt = (index: number) => {
+    setStartIndex(index)
+    setOpen(true)
+  }
+
+  return (
+    <>
+      {/* Grid usa `base` — mismo orden que el feed */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 p-1">
+        {base.map((reel, index) => (
+          <ContentTrigger key={reel.id} onTrigger={() => openAt(index)} ...>
+            ...
+          </ContentTrigger>
+        ))}
+      </div>
+
+      <ContentViewer open={open} onClose={() => setOpen(false)}>
+        {/* Feed recibe `base` — hace append internamente */}
+        <ReelsFeed reels={base} initialIndex={startIndex} />
+      </ContentViewer>
+    </>
+  )
 }
 ```
