@@ -167,6 +167,14 @@
           "description": "Grid tipo Pinterest con alturas variables",
           "tags": ["grid", "gallery", "responsive", "layout"],
           "complexity": "medium"
+        },
+        {
+          "id": "content-viewer",
+          "name": "Content Viewer",
+          "file": "patterns/common/content-viewer.md",
+          "description": "Overlay fixed z-[9999] con trigger — tapa nav, header y todo el layout",
+          "tags": ["overlay", "fullscreen", "portal", "trigger", "immersive", "stories", "reels", "posts"],
+          "complexity": "medium"
         }
       ]
     }
