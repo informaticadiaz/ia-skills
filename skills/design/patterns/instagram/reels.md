@@ -455,6 +455,22 @@ Dos mejoras independientes que se pueden combinar. El shuffle se aplica **una so
 
 ### 1. Orden aleatorio al montar
 
+> ⚠️ **SSR Warning (Next.js App Router):** El lazy initializer de `useState` se ejecuta tanto en el servidor como en el cliente. Como `Math.random()` produce valores distintos en cada ejecución, el orden del servidor y el cliente no coinciden → **hydration mismatch**.
+>
+> **Regla:** Si el componente es renderizado por un Server Component (Next.js), mover el shuffle al Server Component y pasar el array ya shuffleado como prop. El `shuffleArray` debe vivir en `lib/utils.ts`.
+>
+> ```tsx
+> // ✅ En el Server Component (page.tsx)
+> import { shuffleArray } from '@/lib/utils'
+> const packages = shuffleArray(await fetchPackages())
+> return <ReelsGridViewer reels={packages} />
+>
+> // ❌ NO hacer esto en un componente SSR-ed
+> const [items] = useState(() => shuffleArray(reels))
+> ```
+>
+> El patrón `useState(() => shuffleArray())` es válido **solo en apps puramente client-side** (SPA sin SSR).
+
 Shufflear el array en el `useState` lazy initializer — se ejecuta una sola vez, no en cada re-render.
 
 ```tsx
@@ -473,6 +489,7 @@ En el componente que recibe los items (grid viewer o feed directamente):
 ```tsx
 export function ReelsGridViewer({ reels, autoOpen = false }: ReelsGridViewerProps) {
   // Shuffle una sola vez al montar — lazy initializer
+  // ⚠️ Solo válido en SPA sin SSR. Ver advertencia arriba.
   const [items] = useState(() => shuffleArray(reels))
   const [open, setOpen] = useState(autoOpen)
   const [startIndex, setStartIndex] = useState(0)
